@@ -37,6 +37,7 @@ namespace Library.API
             {
                 setupAction.ReturnHttpNotAcceptable = true;
                 setupAction.OutputFormatters.Add(new XmlDataContractSerializerOutputFormatter());
+                setupAction.InputFormatters.Add(new XmlDataContractSerializerInputFormatter());
             });
             var connectionString = Configuration["connectionStrings:libraryDBConnectionString"];
             services.AddDbContext<LibraryContext>(o => o.UseSqlServer(connectionString));
@@ -68,6 +69,8 @@ namespace Library.API
                     .ForMember(dest => dest.Name, opt => opt.MapFrom(src => $"{src.FirstName} {src.LastName}"))
                     .ForMember(dest => dest.Age, opt => opt.MapFrom(src => src.DateOfBirth.GetCurrentAge()));
                 cfg.CreateMap<Book, BookDto>();
+                cfg.CreateMap<AuthorForCreationDto, Author>();
+                cfg.CreateMap<BookForCreationDto, Book>();
             });
             libraryContext.EnsureSeedDataForContext();
             app.UseMvc();

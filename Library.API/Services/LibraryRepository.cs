@@ -17,7 +17,14 @@ namespace Library.API.Services
 
         public PageList<Author> GetAuthors(AuthorsResourceParameters authorsResourceParameters)
         {
-            var collectionBeforePaging = _context.Authors.OrderBy(a => a.FirstName).ThenBy(a => a.LastName);
+            var collectionBeforePaging = _context.Authors.OrderBy(a => a.FirstName).ThenBy(a => a.LastName)
+                .AsQueryable();
+            if (!string.IsNullOrEmpty(authorsResourceParameters.Genre))
+            {
+                var genreForWhereClause = authorsResourceParameters.Genre.Trim().ToLowerInvariant();
+                collectionBeforePaging =
+                    collectionBeforePaging.Where(a => a.Genre.ToLowerInvariant() == genreForWhereClause);
+            }
             return PageList<Author>.Create(collectionBeforePaging, authorsResourceParameters.PageNumber, authorsResourceParameters.PageSize);
         }
 

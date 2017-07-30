@@ -2,10 +2,12 @@
 using Library.API.Entities;
 using Library.API.Models;
 using Library.API.Services;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
-using Microsoft.AspNetCore.JsonPatch;
+using Library.API.Helpers;
+using Microsoft.Extensions.Logging;
 
 namespace Library.API.Controllers
 {
@@ -13,9 +15,11 @@ namespace Library.API.Controllers
     public class BooksController : Controller
     {
         private readonly ILibraryRepository _libraryRepository;
+        private readonly ILogger<BooksController> _logger;
 
-        public BooksController(ILibraryRepository libraryRepository)
+        public BooksController(ILibraryRepository libraryRepository, ILogger<BooksController> logger)
         {
+            _logger = logger;
             _libraryRepository = libraryRepository;
         }
 
@@ -55,6 +59,15 @@ namespace Library.API.Controllers
             {
                 return BadRequest();
             }
+            if (book.Description == book.Title)
+            {
+                ModelState.AddModelError(nameof(BookForCreationDto),
+                    "The description should be diferent from the title");
+            }
+            if (!ModelState.IsValid)
+            {
+                return new UnprocessableEntityObjectResult(ModelState);
+            }
             if (!_libraryRepository.AuthorExists(authorId))
             {
                 return NotFound();
@@ -86,6 +99,7 @@ namespace Library.API.Controllers
             {
                 throw new Exception("Failed");
             }
+            _logger.LogInformation(100, "Book was deleted");
             return NoContent();
         }
 
@@ -95,6 +109,15 @@ namespace Library.API.Controllers
             if (book == null)
             {
                 return BadRequest();
+            }
+            if (book.Description == book.Title)
+            {
+                ModelState.AddModelError(nameof(BookForUpdateDto),
+                    "The description should be diferent from the title");
+            }
+            if (!ModelState.IsValid)
+            {
+                return new UnprocessableEntityObjectResult(ModelState);
             }
             if (!_libraryRepository.AuthorExists(authorId))
             {
@@ -137,9 +160,19 @@ namespace Library.API.Controllers
             var bookForAuthorFromRepo = _libraryRepository.GetBookForAuthor(authorId, id);
             if (bookForAuthorFromRepo == null)
             {
-                var booDto = new BookForUpdateDto();
-                pathcDoc.ApplyTo(booDto);
-                var bookToAdd = Mapper.Map<Book>(booDto);
+                var bookDto = new BookForUpdateDto();
+                pathcDoc.ApplyTo(bookDto, ModelState);
+                if (bookDto.Description == bookDto.Title)
+                {
+                    ModelState.AddModelError(nameof(BookForUpdateDto),
+                        "The description should be diferent from the title");
+                }
+                TryValidateModel(bookDto);
+                if (!ModelState.IsValid)
+                {
+                    return new UnprocessableEntityObjectResult(ModelState);
+                }
+                var bookToAdd = Mapper.Map<Book>(bookDto);
                 bookToAdd.Id = id;
                 _libraryRepository.AddBookForAuthor(authorId, bookToAdd);
                 if (!_libraryRepository.Save())
@@ -151,7 +184,17 @@ namespace Library.API.Controllers
                     bookToReturn);
             }
             var bookToPatch = Mapper.Map<BookForUpdateDto>(bookForAuthorFromRepo);
-            pathcDoc.ApplyTo(bookToPatch);
+            pathcDoc.ApplyTo(bookToPatch, ModelState);
+            if (bookToPatch.Description == bookToPatch.Title)
+            {
+                ModelState.AddModelError(nameof(BookForUpdateDto),
+                    "The description should be diferent from the title");
+            }
+            TryValidateModel(bookToPatch);
+            if (!ModelState.IsValid)
+            {
+                return new UnprocessableEntityObjectResult(ModelState);
+            }
             Mapper.Map(bookToPatch, bookForAuthorFromRepo);
             _libraryRepository.UpdateBookForAuthor(bookForAuthorFromRepo);
             if (!_libraryRepository.Save())

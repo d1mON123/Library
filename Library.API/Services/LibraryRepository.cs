@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Library.API.Helpers;
 
 namespace Library.API.Services
 {
@@ -14,9 +15,10 @@ namespace Library.API.Services
             _context = context;
         }
 
-        public IEnumerable<Author> GetAuthors()
+        public PageList<Author> GetAuthors(AuthorsResourceParameters authorsResourceParameters)
         {
-            return _context.Authors.OrderBy(a => a.FirstName).ThenBy(a => a.LastName);
+            var collectionBeforePaging = _context.Authors.OrderBy(a => a.FirstName).ThenBy(a => a.LastName);
+            return PageList<Author>.Create(collectionBeforePaging, authorsResourceParameters.PageNumber, authorsResourceParameters.PageSize);
         }
 
         public Author GetAuthor(Guid authorId)

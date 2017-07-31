@@ -1,4 +1,5 @@
-﻿using Library.API.Entities;
+﻿using System.Linq;
+using Library.API.Entities;
 using Library.API.Helpers;
 using Library.API.Models;
 using Library.API.Services;
@@ -40,7 +41,19 @@ namespace Library.API
             {
                 setupAction.ReturnHttpNotAcceptable = true;
                 setupAction.OutputFormatters.Add(new XmlDataContractSerializerOutputFormatter());
-                setupAction.InputFormatters.Add(new XmlDataContractSerializerInputFormatter());
+                //setupAction.InputFormatters.Add(new XmlDataContractSerializerInputFormatter());
+                var xmlDataContractSerializerInputFormatter = new XmlDataContractSerializerInputFormatter();
+                xmlDataContractSerializerInputFormatter.SupportedMediaTypes.Add(
+                    "application/vnd.marvin.authorwithdateofdeath.full+xml");
+                var jsonInputFormatter = setupAction.InputFormatters.OfType<JsonInputFormatter>().FirstOrDefault();
+                if (jsonInputFormatter != null)
+                {
+                    jsonInputFormatter.SupportedMediaTypes.Add("application/vnd.marvin.author.full+json");
+                    jsonInputFormatter.SupportedMediaTypes.Add(
+                        "application/vnd.marvin.authorwithdateofdeath.full+json");
+                }
+                var jsonOutputFormatter = setupAction.OutputFormatters.OfType<JsonOutputFormatter>().FirstOrDefault();
+                jsonOutputFormatter?.SupportedMediaTypes.Add("application/vnd.marvin.hateoas+json");
             }).AddJsonOptions(options =>
             {
                 options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
@@ -90,9 +103,10 @@ namespace Library.API
             {
                 cfg.CreateMap<Author, AuthorDto>()
                     .ForMember(dest => dest.Name, opt => opt.MapFrom(src => $"{src.FirstName} {src.LastName}"))
-                    .ForMember(dest => dest.Age, opt => opt.MapFrom(src => src.DateOfBirth.GetCurrentAge()));
+                    .ForMember(dest => dest.Age, opt => opt.MapFrom(src => src.DateOfBirth.GetCurrentAge(src.DateOfDeath)));
                 cfg.CreateMap<Book, BookDto>();
                 cfg.CreateMap<AuthorForCreationDto, Author>();
+                cfg.CreateMap<AuthorForCreationWithDateOfDeathDto, Author>();
                 cfg.CreateMap<BookForCreationDto, Book>();
                 cfg.CreateMap<BookForUpdateDto, Book>();
                 cfg.CreateMap<Book, BookForUpdateDto>();

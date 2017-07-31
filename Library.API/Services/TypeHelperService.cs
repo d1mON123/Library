@@ -8,7 +8,7 @@ namespace Library.API.Services
         {
             if (string.IsNullOrWhiteSpace(fields))
             {
-                return false;
+                return true;
             }
             var fieldsAfterSplit = fields.Split(',');
             foreach (var field in fieldsAfterSplit)

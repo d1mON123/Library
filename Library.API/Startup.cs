@@ -36,7 +36,7 @@ namespace Library.API
         }
 
         public IConfigurationRoot Configuration { get; }
-        
+
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc(setupAction =>

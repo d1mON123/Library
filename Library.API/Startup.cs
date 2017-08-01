@@ -34,7 +34,7 @@ namespace Library.API
         }
 
         public IConfigurationRoot Configuration { get; }
-        
+
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc(setupAction =>
@@ -69,6 +69,13 @@ namespace Library.API
             });
             services.AddTransient<IPropertyMappingService, PropertyMappingService>();
             services.AddTransient<ITypeHelperService, TypeHelperService>();
+            services.AddHttpCacheHeaders(experationModelOptions =>
+            {
+                experationModelOptions.MaxAge = 600;
+            }, validationModelOptions =>
+            {
+                validationModelOptions.AddMustRevalidate = true;
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -112,6 +119,7 @@ namespace Library.API
                 cfg.CreateMap<Book, BookForUpdateDto>();
             });
             libraryContext.EnsureSeedDataForContext();
+            app.UseHttpCacheHeaders();
             app.UseMvc();
         }
     }
